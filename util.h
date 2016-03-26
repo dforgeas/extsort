@@ -21,10 +21,10 @@
 #endif
 
 // Number of bytes in a page
-#define PAGE_SIZE (4*(1<<10))
+#define PAGE_SIZE (4<<10)
 #define INTS_SIZE PAGE_SIZE/sizeof(int)
 
-#define NUM_THREADS 8
+#define NUM_THREADS 4
 
 /*
 typedef struct {

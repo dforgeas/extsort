@@ -13,7 +13,7 @@ int main(int argc, char* argv[])
         usage();
     }
     DATA_FILENAME = argv[1];
-    BUF_SIZE = atoi(argv[2])*(1<<20); // convert from MB to bytes
+    BUF_SIZE = atoi(argv[2]) << 20; // convert from MB to bytes
     IO_BUF_PAGES = atoi(argv[3]);
 
     int sort_fd = open(DATA_FILENAME, O_RDONLY);
@@ -34,10 +34,7 @@ int main(int argc, char* argv[])
 
     // initially, each run is just 1 page, so this is how many runs there are
     int run_length = 1;
-    unsigned long num_runs = DATA_SIZE / PAGE_SIZE;
-    if(DATA_SIZE % PAGE_SIZE) {
-        num_runs++;
-    }
+    unsigned long num_runs = DATA_SIZE / PAGE_SIZE + (DATA_SIZE % PAGE_SIZE != 0);
 
     printf("Sorting %lu ints (%.02f MB)...\n", 
             num_runs*INTS_SIZE,
@@ -46,7 +43,7 @@ int main(int argc, char* argv[])
     char input_prefix[] = "foo_";
     char output_prefix[] = "bar_";
 
-    long start_usecs = get_time_usecs();
+    double start_usecs = get_time_usecs();
 
     while(num_runs > 1) {
         printf("Iterate: %lu runs left\n", num_runs);
@@ -165,8 +162,8 @@ int main(int argc, char* argv[])
         num_runs = num_merges;
     }
 
-    long end_usecs = get_time_usecs();
-    double secs = (double)(end_usecs - start_usecs) / (double)1000000;
+    double end_usecs = get_time_usecs();
+    double secs = (end_usecs - start_usecs) / 1000000.0;
     printf("Done sorting.\n");
     printf("Sorting took %.02f seconds.\n", secs);
 #ifdef DEBUG
@@ -374,13 +371,11 @@ void error(const char* msg)
     exit(-1);
 }
  
-long get_time_usecs()
+double get_time_usecs()
 {
     struct timeval time;
     struct timezone tz;
     memset(&tz, '\0', sizeof(timezone));
     gettimeofday(&time, &tz);
-    long usecs = time.tv_sec*1000000 + time.tv_usec;
-
-    return usecs;
+    return time.tv_sec*1000000.0 + time.tv_usec;
 }
