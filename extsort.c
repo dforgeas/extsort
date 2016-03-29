@@ -54,11 +54,7 @@ int main(int argc, char* argv[])
             num_ways = num_runs;
         }
         // Calculate how many multimerges need to be done to merge all runs
-        unsigned long num_merges = num_runs / num_ways;
-        if(num_runs % num_ways) {
-            num_merges++;
-        }
-
+        unsigned long num_merges = num_runs / num_ways + (num_runs % num_ways != 0);
         unsigned long run_counter = 0;
 
         // Start iterating the multimerges
@@ -119,13 +115,13 @@ int main(int argc, char* argv[])
             }
             else {
                 for(int i=0; i<num_runs_in_merge; i++) {
-                    snprintf(filename, 100, "%s%lu.dat", input_prefix, run_counter);
+                    snprintf(filename, 99, "%s%lu.dat", input_prefix, run_counter);
                     PRINTF("Reading in: %s\n", filename);
                     run_counter++;
                 }
             }
 
-            snprintf(filename, 100, "%s%d.dat", output_prefix, i);
+            snprintf(filename, 99, "%s%d.dat", output_prefix, i);
             PRINTF("Writing out: %s\n", filename);
             int output_fd = open(filename, O_CREAT|O_WRONLY|O_TRUNC, 
                     S_IRWXU|S_IRWXG);
@@ -167,7 +163,7 @@ int main(int argc, char* argv[])
     printf("Done sorting.\n");
     printf("Sorting took %.02f seconds.\n", secs);
 #ifdef DEBUG
-    snprintf(filename, 100, "%s%d.dat", input_prefix, 0);
+    snprintf(filename, 99, "%s%d.dat", input_prefix, 0);
     verify(filename);
 #endif
 
@@ -192,13 +188,13 @@ void multimerge(run_t** runs, char* input_prefix, int num_runs, int output_fd, i
 {
     // Allocate run bufs if not base case
     int run_offsets[num_runs];
-    char filename[20];
+    char filename[20] = {};
     if(base == 0) {
         PRINTF("multimerge: allocating run bufs\n");
         for(int i=0; i<num_runs; i++) {
             runs[i] = (run_t*)calloc(1, sizeof(run_t));
-            runs[i]->items = (int*)calloc(1, IO_BUF_PAGES*PAGE_SIZE);
-            snprintf(filename, 20, "%s%d.dat", input_prefix, i);
+            runs[i]->items = (int*)calloc(IO_BUF_PAGES, PAGE_SIZE);
+            snprintf(filename, 19, "%s%d.dat", input_prefix, i);
             int fd = open(filename, O_RDONLY);
             int bytes = read(fd, runs[i]->items, IO_BUF_PAGES*PAGE_SIZE);
             close(fd);
@@ -255,7 +251,7 @@ void multimerge(run_t** runs, char* input_prefix, int num_runs, int output_fd, i
                 live_runs--;
             } else {
                 // Reopen min_run's fd at right offset to get next chunk
-                snprintf(filename, 20, "%s%d.dat", input_prefix, min_run);
+                snprintf(filename, 19, "%s%d.dat", input_prefix, min_run);
                 int fd = open(filename, O_RDONLY);
                 lseek(fd, run_offsets[min_run], SEEK_SET);
                 int bytes = read(fd, runs[min_run]->items, IO_BUF_PAGES*PAGE_SIZE);
@@ -318,10 +314,7 @@ void verify(char* filename)
         error("Could not fstat file!");
     }
     int buf_size = IO_BUF_PAGES*PAGE_SIZE;
-    int num_runs = s.st_size / (buf_size);
-    if(s.st_size % buf_size) {
-        num_runs++;
-    }
+    int num_runs = s.st_size / buf_size + (s.st_size % buf_size != 0);
 
     int* buf = (int*)calloc(1, buf_size);
     int current = 0;

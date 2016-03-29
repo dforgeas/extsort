@@ -11,12 +11,11 @@ void ext_qsort(run_t* data_ptr)
     qsort_recurse(data_ptr, 0, data_ptr->length-1);
 }
 
-
 void parallel_qsort(run_t** runs, int num_runs)
 {
     // Allocate work for each thread
     worker_data_t** runs_per_thread;
-    runs_per_thread = (worker_data_t**)calloc(1, NUM_THREADS*sizeof(worker_data_t*));
+    runs_per_thread = (worker_data_t**)calloc(NUM_THREADS, sizeof(worker_data_t*));
     int remainder = num_runs % NUM_THREADS;
     int offset = 0;
     for(int i=0; i<NUM_THREADS; i++) {
